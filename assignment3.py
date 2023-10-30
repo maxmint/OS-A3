@@ -1,6 +1,7 @@
 import socket
 import threading
 import argparse
+import time
 
 # Global variables
 PORT = None
@@ -68,6 +69,28 @@ def print_book():
         book_text = '\n'.join([node['data'] for node in book_lines])
         print(book_text)
 
+# Function for analysis thread
+def analysis_thread():
+    while True:
+        time.sleep(2)  # Configurable interval (2 seconds in this example)
+
+        with lock:
+            pattern_occurrences = {}
+
+            for node in shared_list:
+                if 'contains_pattern' in node and node['contains_pattern']:
+                    pattern = PATTERN
+                    if pattern not in pattern_occurrences:
+                        pattern_occurrences[pattern] = 0
+                    pattern_occurrences[pattern] += 1
+
+            sorted_occurrences = sorted(pattern_occurrences.items(), key=lambda x: x[1], reverse=True)
+
+            if sorted_occurrences:
+                print(f"\nBook Titles Sorted by Frequency of '{PATTERN}' Occurrences:")
+                for pattern, count in sorted_occurrences:
+                    print(f"'{pattern}': {count} occurrences")
+
 # Function to start the server
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,4 +116,14 @@ def parse_args():
 
 if __name__ == "__main__":
     parse_args()
-    start_server()
+
+    # Start the server
+    server_thread = threading.Thread(target=start_server)
+    server_thread.start()
+
+    # Start the analysis threads
+    analysis_thread1 = threading.Thread(target=analysis_thread)
+    analysis_thread1.start()
+
+    analysis_thread2 = threading.Thread(target=analysis_thread)
+    analysis_thread2.start()
